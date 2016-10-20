@@ -18,6 +18,7 @@ from compressor.storage import compressor_file_storage
 from compressor.signals import post_compress
 from compressor.utils import get_class, get_mod_func, staticfiles
 from compressor.utils.decorators import cached_property
+from django import VERSION
 
 # Some constants for nicer handling.
 SOURCE_HUNK, SOURCE_FILE = 'inline', 'file'
@@ -339,12 +340,12 @@ class Compressor(object):
 
         self.context['compressed'].update(context or {})
         self.context['compressed'].update(self.extra_context)
-        if hasattr(self.context, 'flatten'):
+        if VERSION < (1, 8) or VERSION > (1, 9):
+            final_context = self.context
+        else:
             # Django 1.8 complains about Context being passed to its
             # Template.render function.
             final_context = self.context.flatten()
-        else:
-            final_context = self.context
 
         post_compress.send(sender=self.__class__, type=self.type,
                            mode=mode, context=final_context)
